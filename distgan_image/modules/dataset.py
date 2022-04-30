@@ -33,6 +33,26 @@ def imread(path, is_grayscale=False):
     else:
         img = io.imread(path).astype(np.float)
     return np.array(img)  
+
+def read_cifar100(data_dir, filenames):
+    all_data = []
+    all_labels = []
+    for filename in filenames:        
+        data, labels = unpickle(data_dir + '/' + filename)
+        all_data.append(data)
+        all_labels.append(labels)
+
+    images = np.concatenate(all_data, axis=0)
+    labels = np.concatenate(all_labels, axis=0)
+    
+    #normalize into [0,1]
+    images = images.astype(float)/255.0
+    images = np.reshape(images,(-1, 3, 32, 32))
+    images = np.transpose(images,(0,2,3,1)) #tranpose to standard order of channels
+    images = np.reshape(images,(-1, 32*32*3))
+    
+    print('cifar100 data: {}'.format(np.shape(images)))
+    return images, labels
         
 def read_cifar10(data_dir, filenames):
     all_data = []
@@ -121,6 +141,13 @@ class Dataset(object):
             # extract into the correct folder
             data_files = ['data_batch_1','data_batch_2','data_batch_3','data_batch_4','data_batch_5']
             self.data, _ = read_cifar10(source, data_files)
+            self.minibatches = self.random_mini_batches(self.data.T, self.batch_size, self.seed)
+         
+        elif name == 'cifar100':
+            # download data files from: 'http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz' 
+            # extract into the correct folder
+            data_files = ['data_batch_1','data_batch_2','data_batch_3','data_batch_4','data_batch_5']
+            self.data, _ = read_cifar100(source, data_files)
             self.minibatches = self.random_mini_batches(self.data.T, self.batch_size, self.seed)
         elif name == 'celeba':
             # Count number of data images
